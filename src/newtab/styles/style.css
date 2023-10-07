@@ -1,0 +1,13 @@
+.tab-item-text {
+  text-overflow: ellipsis;
+  word-break: break-all;
+  overflow: hidden;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.tab-favicon-img {
+  height: 16px;
+  width: auto;
+  max-width: 32px;
+}
