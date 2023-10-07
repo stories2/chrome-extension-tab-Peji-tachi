@@ -142,7 +142,34 @@ window.onload = async function () {
 };
 
 function insertTabsToDB(tabs = []) {
-  tabs.forEach((tab) => ((tab["children"] = []), (tabDB[tab.id] = tab)));
+  tabs.forEach(
+    (tab) => (
+      (tab["children"] = []),
+      (tab["created_time"] = Date.now()),
+      (tab["updated_time"] = Date.now()),
+      (tabDB[tab.id] = tab)
+    )
+  );
+  tabs.forEach((tab) => {
+    try {
+      const urlData = new URL(tab.url);
+      tabDB[tab.id] = {
+        hash: urlData["hash"],
+        host: urlData["host"],
+        hostname: urlData["hostname"],
+        origin: urlData["origin"],
+        password: urlData["password"],
+        pathname: urlData["pathname"],
+        port: urlData["port"],
+        protocol: urlData["protocol"],
+        search: urlData["search"],
+        username: urlData["username"],
+        ...tab,
+      };
+    } catch (err) {
+      console.error("id:", tab.id, tab.url, err.message);
+    }
+  });
 }
 
 function updateTabsToDB(tabs = []) {
@@ -151,7 +178,28 @@ function updateTabsToDB(tabs = []) {
       children: [],
       ...tab,
       ...(tabDB[tab.id] || {}),
+      updated_time: Date.now(),
     };
+  });
+  tabs.forEach((tab) => {
+    try {
+      const urlData = new URL(tab.url);
+      tabDB[tab.id] = {
+        ...tabDB[tab.id],
+        hash: urlData["hash"],
+        host: urlData["host"],
+        hostname: urlData["hostname"],
+        origin: urlData["origin"],
+        password: urlData["password"],
+        pathname: urlData["pathname"],
+        port: urlData["port"],
+        protocol: urlData["protocol"],
+        search: urlData["search"],
+        username: urlData["username"],
+      };
+    } catch (err) {
+      console.error("id:", tab.id, tab.url, err.message);
+    }
   });
 }
 
