@@ -1,53 +1,21 @@
 {
   "manifest_version": 3,
-  "name": "Chrome Extension Template",
-  "description": "A Chrome Extension created using a template",
+  "name": "Peji Tachi",
+  "description": "Manage tab branches",
   "version": "0.0.1",
-  "author": "Clyde D'Souza",
+  "author": "stories2",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "omnibox": {
-    "keyword": "@@"
-  },
-  "permissions": ["storage", "tabs"],
-  "options_ui": {
-    "page": "options/options.html",
-    "open_in_tab": true
-  },
+  "permissions": ["tabs"],
   "background": {
     "service_worker": "background/index.js",
     "type": "module"
   },
-  "content_scripts": [
-    {
-      "matches": ["*://github.com/*"],
-      "js": ["content_scripts/index.js"]
-    }
-  ],
   "action": {
     "default_popup": "popup/popup.html",
     "default_title": "Open template popup"
-  },
-  "commands": {
-    "turn-on": {
-      "suggested_key": {
-        "default": "Alt + Shift + M"
-      },
-      "description": "Adds an ON badge to the action icon."
-    },
-    "turn-off": {
-      "suggested_key": {
-        "default": "Alt + Shift + N"
-      },
-      "description": "Adds an OFF badge to the action icon."
-    },
-    "_execute_action": {
-      "suggested_key": {
-        "default": "Alt + Shift + L"
-      }
-    }
   }
 }
