@@ -109,6 +109,7 @@ function serviceWorkerEventHandler(eventLog = []) {
     switch (event.type) {
       case "openInNewTab":
         const { openerTabId, id } = event.tab;
+        console.log("openInNewTab parent", tabDB[openerTabId]);
         linkChildTabAndParentTab(openerTabId, id);
         insertTabsToDB([event.tab]);
         break;
