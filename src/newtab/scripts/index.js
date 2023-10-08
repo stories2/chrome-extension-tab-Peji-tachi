@@ -73,6 +73,7 @@ function createTabItem(tabInfo) {
   aTag.setAttribute("href", url);
   aTag.setAttribute("target", "_blank");
   li.appendChild(aTag);
+
   return li;
 }
 
