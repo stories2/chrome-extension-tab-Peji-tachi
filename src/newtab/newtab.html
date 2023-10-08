@@ -22,8 +22,19 @@
     ></script>
   </head>
   <body>
-    <div class="container text-center" style="margin-top: 20vh">
-      <form class="row" id="searchForm">
+    <div class="container text-center">
+      <div class="row text-start">
+        <div class="col">
+          Debugging:
+          <button type="button" class="btn btn-primary" id="SaveTabsBtn">
+            Save
+          </button>
+          <button type="button" class="btn btn-primary" id="LoadTabsBtn">
+            Load
+          </button>
+        </div>
+      </div>
+      <form class="row" id="searchForm" style="margin-top: 20vh">
         <div class="d-none d-xl-block col-xl-2"></div>
         <div class="col-12 col-xl-8">
           <input

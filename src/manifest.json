@@ -18,7 +18,8 @@
     "open_in_tab": true
   },
   "background": {
-    "service_worker": "background/index.js"
+    "service_worker": "background/index.js",
+    "type": "module"
   },
   "content_scripts": [
     {

@@ -67,16 +67,20 @@ function createTabItem(tabInfo) {
   );
   li.appendChild(img);
 
-  const span = document.createElement("span");
-  span.style.marginLeft = "10px";
-  span.innerText = title;
-  li.appendChild(span);
+  const aTag = document.createElement("a");
+  aTag.style.marginLeft = "10px";
+  aTag.innerText = title;
+  aTag.setAttribute("href", url);
+  aTag.setAttribute("target", "_blank");
+  li.appendChild(aTag);
   return li;
 }
 
 function appendTabsToTabList(tabs = []) {
   const tabListLayouts = getTabListLayoutsByScreenSize();
-  tabs.forEach((tab, idx) => {
+  let idx = 0;
+  for (let i = tabs.length - 1; i >= 0; i--) {
+    const tab = tabs[i];
     const lgLen = tabListLayouts.lg.length;
     const mdLen = tabListLayouts.md.length;
     const xsLen = tabListLayouts.xs.length;
@@ -85,7 +89,8 @@ function appendTabsToTabList(tabs = []) {
     tabListLayouts.lg[idx % lgLen].appendChild(li);
     tabListLayouts.md[idx % mdLen].appendChild(li.cloneNode(true));
     tabListLayouts.xs[idx % xsLen].appendChild(li.cloneNode(true));
-  });
+    idx++;
+  }
 }
 
 function resetTabsFromTabList() {
@@ -95,37 +100,116 @@ function resetTabsFromTabList() {
   tabListLayouts.xs.forEach((tabList) => tabList.replaceChildren());
 }
 
-const tabDB = {};
-
-window.onload = async function () {
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    console.log("changeInfo status", changeInfo.status, changeInfo, tab);
-    if (changeInfo.status === "loading") {
-      const { openerTabId, title, url, id } = tab;
-      if (typeof openerTabId !== "undefined") {
-        console.log(
-          "open in new tab. parent:",
-          openerTabId,
-          " id:",
-          id,
-          title,
-          url
-        );
+/**
+ * @param {object} event {method: string, data: Array[{type:string, tab:object}]} object
+ */
+function serviceWorkerEventHandler(eventLog = []) {
+  eventLog.forEach((event) => {
+    console.log("event", event);
+    switch (event.type) {
+      case "openInNewTab":
+        const { openerTabId, id } = event.tab;
         linkChildTabAndParentTab(openerTabId, id);
-        insertTabsToDB([tab]);
-        console.log("parent:", tabDB[openerTabId]);
-        console.log("child:", tabDB[id]);
-      } else {
-        updateTabsToDB([tab]);
-        console.log("opened|restored tab url updated. id:", id, title, url);
-        console.log("tab db:", tabDB[id]);
-      }
+        insertTabsToDB([event.tab]);
+        break;
+      case "openOrRestoredTab":
+        updateTabsToDB([event.tab]);
+        break;
+      case "tabRemoved":
+        updateTabStatus(event.tab.id, "removed");
+        break;
+      default:
+        console.warn("undefined event type", event.type);
+        break;
     }
   });
-  chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
-    // console.log(tabId, removeInfo);
-    updateTabStatus(tabId, "removed");
-    console.log("rm tab:", tabDB[tabId]);
+}
+
+async function getCurrentTab() {
+  let queryOptions = { active: true, lastFocusedWindow: true };
+  // `tab` will either be a `tabs.Tab` instance or `undefined`.
+  let [tab] = await chrome.tabs.query(queryOptions);
+  return tab;
+}
+
+function closeSingleTabAndIgnoreException(tabId) {
+  return new Promise((resolve) => {
+    try {
+      chrome.tabs.remove(tabId, () => {
+        resolve(true);
+      });
+    } catch (err) {
+      console.error("close tab failed", tabId, err.message);
+      resolve(false);
+    }
+  });
+}
+
+function closeAllTabExceptCurrentTab(tabs = []) {
+  return new Promise(async (resolve) => {
+    const { id: currentTabId } = await getCurrentTab();
+    const tabIdListToRemove = tabs
+      .map((tab) => tab.id)
+      .filter((id) => id != currentTabId);
+    let closedTabCnt = 0;
+    for (let i = 0; i < tabIdListToRemove.length; i++) {
+      const closeRe = await closeSingleTabAndIgnoreException(
+        tabIdListToRemove[i]
+      );
+      if (closeRe) closedTabCnt++;
+    }
+    resolve(closedTabCnt);
+  });
+}
+
+function onSaveTabsBtnClicked(e) {
+  if (!requestCleaningTabs) {
+    requestCleaningTabs = true;
+    channel4Broadcast.postMessage({
+      method: "getEventLog",
+    });
+  } else console.warn("already cleaning tabs is processing");
+}
+
+async function loadSavedTabsAndRuntimeTabs() {
+  const savedTabs = JSON.parse(localStorage.getItem("peji-tachi") || "[]");
+  console.log("loaded tabs", savedTabs.length);
+  const tabs = await getAllTabsFromAllWindows();
+  console.log("runtime tabs", tabs.length);
+  //   console.log("tabs", tabs);
+  insertTabsToDB(savedTabs.concat(tabs));
+  console.log(tabDB);
+}
+
+async function onLoadTabsBtnClicked(e) {
+  resetTabsFromTabList();
+  await loadSavedTabsAndRuntimeTabs();
+  appendTabsToTabList(selectAllTabsFromDB());
+}
+
+let requestCleaningTabs = false;
+const tabDB = {};
+const channel4Broadcast = new BroadcastChannel("peji-tachi");
+channel4Broadcast.onmessage = async (event) => {
+  switch (event.data.method) {
+    case "returnEventLog":
+      console.log("event", event.data);
+      serviceWorkerEventHandler(event.data.data);
+
+      if (requestCleaningTabs) {
+        const tabs = selectAllTabsFromDB();
+        localStorage.setItem("peji-tachi", JSON.stringify(tabs));
+        console.log("saved tabs", tabs.length);
+        await closeAllTabExceptCurrentTab(tabs);
+        requestCleaningTabs = false;
+      }
+      break;
+  }
+};
+
+window.onload = async function () {
+  channel4Broadcast.postMessage({
+    method: "getEventLog",
   });
   document
     .getElementById("inputSearchBar")
@@ -134,14 +218,20 @@ window.onload = async function () {
   document.getElementById("searchForm").addEventListener("submit", (e) => {
     e.preventDefault();
   });
-  const tabs = await getAllTabsFromAllWindows();
-  //   console.log("tabs", tabs);
-  insertTabsToDB(tabs);
-  console.log(tabDB);
+
+  document
+    .getElementById("SaveTabsBtn")
+    .addEventListener("click", onSaveTabsBtnClicked);
+  document
+    .getElementById("LoadTabsBtn")
+    .addEventListener("click", onLoadTabsBtnClicked);
+
+  await loadSavedTabsAndRuntimeTabs();
   appendTabsToTabList(selectAllTabsFromDB());
 };
 
 function insertTabsToDB(tabs = []) {
+  console.log("insert", tabs, Object.keys(tabDB).length);
   tabs.forEach(
     (tab) => (
       (tab["children"] = []),
@@ -170,6 +260,7 @@ function insertTabsToDB(tabs = []) {
       console.error("id:", tab.id, tab.url, err.message);
     }
   });
+  console.log("insert", tabs, Object.keys(tabDB).length);
 }
 
 function updateTabsToDB(tabs = []) {
