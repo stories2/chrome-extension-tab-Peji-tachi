@@ -69,5 +69,6 @@ function onTabItemClicked() {
   height: 16px;
   width: auto;
   max-width: 32px;
+  margin-right: 5px;
 }
 </style>
