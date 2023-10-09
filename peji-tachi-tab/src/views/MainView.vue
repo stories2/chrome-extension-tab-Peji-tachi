@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import DebuggingFeature from '../components/DebuggingFeature.vue'
 import TabListContainer from '@/components/TabListContainer.vue'
+import PouchDB from 'pouchdb-browser'
+
+const pouchdb = new PouchDB('test')
+pouchdb.info().then(function (info) {
+  console.log(info)
+})
 </script>
 
 <template>
