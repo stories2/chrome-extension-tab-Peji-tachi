@@ -5,6 +5,10 @@ const eventLog = [];
 const channel4Broadcast = new BroadcastChannel("peji-tachi");
 channel4Broadcast.onmessage = (event) => {
   switch (event.data.method) {
+    case "ping":
+      console.log("ping");
+      channel4Broadcast.postMessage({ method: "pong" });
+      break;
     case "resetEventLog":
       eventLog.length = 0;
       break;

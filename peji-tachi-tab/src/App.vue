@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { RouterView } from 'vue-router'
+import { pejiTachiBroadcastChaneel } from '@/core/BroadcastChannelManager'
+import { onMounted } from 'vue'
+
+onMounted(() => {
+  console.log('send ping')
+  pejiTachiBroadcastChaneel.postMessage({
+    method: 'ping'
+  })
+})
 </script>
 
 <template>
