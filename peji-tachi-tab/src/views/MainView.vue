@@ -2,10 +2,17 @@
 import DebuggingFeature from '../components/DebuggingFeature.vue'
 import TabListContainer from '@/components/TabListContainer.vue'
 import PouchDB from 'pouchdb-browser'
+import { onMounted } from 'vue'
+import { getAllTabsFromAllWindows } from '@/core/chromeAPIManager'
 
 const pouchdb = new PouchDB('test')
 pouchdb.info().then(function (info) {
   console.log(info)
+})
+
+onMounted(async () => {
+  const tabs = await getAllTabsFromAllWindows()
+  console.log('tabs', tabs)
 })
 </script>
 
@@ -27,7 +34,7 @@ pouchdb.info().then(function (info) {
 
   <div class="row gap-50px"></div>
 
-  <div class="row"><TabListContainer /></div>
+  <div class="row"><TabListContainer :tab-list="[]" /></div>
 </template>
 
 <style scoped>

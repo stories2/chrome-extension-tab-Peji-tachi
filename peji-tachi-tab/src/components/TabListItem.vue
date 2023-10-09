@@ -1,13 +1,6 @@
 <script setup lang="ts">
 import defaultImgIcon from '@/assets/icon16.png'
-
-export interface TabListItemModel {
-  title: string
-  imgUrl?: string
-  link: string
-  tabId: number
-  childrenLen: number
-}
+import { type TabListItemModel } from '@/models/TabListItemModel'
 
 const props = withDefaults(defineProps<TabListItemModel>(), {
   title: 'Default Title',
